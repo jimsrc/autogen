@@ -233,6 +233,7 @@ class OpenAIWrapper:
         if ERROR:
             raise ERROR
         last = len(self._clients) - 1
+        use_cache = config.pop('use_cache')
         for i, client in enumerate(self._clients):
             # merge the input config with the i-th config in the config list
             full_config = {**config, **self._config_list[i]}
@@ -250,12 +251,13 @@ class OpenAIWrapper:
             context = extra_kwargs.get("context")
 
             cache_client = None
-            if cache is not None:
-                # Use the cache object if provided.
-                cache_client = cache
-            elif cache_seed is not None:
-                # Legacy cache behavior, if cache_seed is given, use DiskCache.
-                cache_client = Cache.disk(cache_seed, LEGACY_CACHE_DIR)
+            if use_cache:
+                if cache is not None:
+                    # Use the cache object if provided.
+                    cache_client = cache
+                elif cache_seed is not None:
+                    # Legacy cache behavior, if cache_seed is given, use DiskCache.
+                    cache_client = Cache.disk(cache_seed, LEGACY_CACHE_DIR)
 
             if cache_client is not None:
                 with cache_client as cache:

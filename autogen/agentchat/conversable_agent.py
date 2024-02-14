@@ -789,6 +789,7 @@ class ConversableAgent(Agent):
         messages: Optional[List[Dict]] = None,
         sender: Optional[Agent] = None,
         config: Optional[OpenAIWrapper] = None,
+        use_cache = True,
     ) -> Tuple[bool, Union[str, Dict, None]]:
         """Generate a reply using autogen.oai."""
         client = self.client if config is None else config
@@ -810,10 +811,14 @@ class ConversableAgent(Agent):
                 all_messages.append(message)
 
         # TODO: #1143 handle token limit exceeded error
+        if not(use_cache):
+            print('---> > > > > > > NOT USING CACHE!')
+
         response = client.create(
             context=messages[-1].pop("context", None),
             messages=self._oai_system_message + all_messages,
             cache=self.client_cache,
+            use_cache=use_cache,
         )
 
         extracted_response = client.extract_text_or_completion_object(response)[0]
@@ -835,6 +840,7 @@ class ConversableAgent(Agent):
         messages: Optional[List[Dict]] = None,
         sender: Optional[Agent] = None,
         config: Optional[Any] = None,
+        use_cache = True,
     ) -> Tuple[bool, Union[str, Dict, None]]:
         """Generate a reply using autogen.oai asynchronously."""
         return await asyncio.get_event_loop().run_in_executor(
@@ -846,6 +852,7 @@ class ConversableAgent(Agent):
         messages: Optional[List[Dict]] = None,
         sender: Optional[Agent] = None,
         config: Optional[Union[Dict, Literal[False]]] = None,
+        use_cache = True,
     ):
         """Generate a reply using code execution."""
         code_execution_config = config if config is not None else self._code_execution_config
@@ -898,6 +905,7 @@ class ConversableAgent(Agent):
         messages: Optional[List[Dict]] = None,
         sender: Optional[Agent] = None,
         config: Optional[Any] = None,
+        use_cache = True,
     ) -> Tuple[bool, Union[Dict, None]]:
         """
         Generate a reply using function call.
@@ -925,6 +933,7 @@ class ConversableAgent(Agent):
         messages: Optional[List[Dict]] = None,
         sender: Optional[Agent] = None,
         config: Optional[Any] = None,
+        use_cache = True,
     ) -> Tuple[bool, Union[Dict, None]]:
         """
         Generate a reply using async function call.
@@ -957,6 +966,7 @@ class ConversableAgent(Agent):
         messages: Optional[List[Dict]] = None,
         sender: Optional[Agent] = None,
         config: Optional[Any] = None,
+        use_cache = True,
     ) -> Tuple[bool, Union[Dict, None]]:
         """Generate a reply using tool call."""
         if config is None:
@@ -1002,6 +1012,7 @@ class ConversableAgent(Agent):
         messages: Optional[List[Dict]] = None,
         sender: Optional[Agent] = None,
         config: Optional[Any] = None,
+        use_cache = True,
     ) -> Tuple[bool, Union[Dict, None]]:
         """Generate a reply using async function call."""
         if config is None:
@@ -1027,6 +1038,7 @@ class ConversableAgent(Agent):
         messages: Optional[List[Dict]] = None,
         sender: Optional[Agent] = None,
         config: Optional[Any] = None,
+        use_cache = True,
     ) -> Tuple[bool, Union[str, None]]:
         """Check if the conversation should be terminated, and if human reply is provided.
 
@@ -1139,6 +1151,7 @@ class ConversableAgent(Agent):
         messages: Optional[List[Dict]] = None,
         sender: Optional[Agent] = None,
         config: Optional[Any] = None,
+        use_cache = True,
     ) -> Tuple[bool, Union[str, None]]:
         """(async) Check if the conversation should be terminated, and if human reply is provided.
 
@@ -1249,6 +1262,7 @@ class ConversableAgent(Agent):
         messages: Optional[List[Dict]] = None,
         sender: Optional[Agent] = None,
         exclude: Optional[List[Callable]] = None,
+        use_cache = True,
     ) -> Union[str, Dict, None]:
         """Reply based on the conversation history and the sender.
 
@@ -1295,7 +1309,8 @@ class ConversableAgent(Agent):
             if inspect.iscoroutinefunction(reply_func):
                 continue
             if self._match_trigger(reply_func_tuple["trigger"], sender):
-                final, reply = reply_func(self, messages=messages, sender=sender, config=reply_func_tuple["config"])
+                final, reply = reply_func(self, messages=messages, sender=sender, 
+                    config=reply_func_tuple["config"], use_cache=use_cache)
                 if final:
                     return reply
         return self._default_auto_reply
